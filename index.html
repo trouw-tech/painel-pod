@@ -146,7 +146,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--t1);font-
 .table-wrap::-webkit-scrollbar{width:6px;height:6px}
 .table-wrap::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
 
-.pod-table{border-collapse:collapse;table-layout:fixed}
+.pod-table{border-collapse:collapse;table-layout:fixed;width:100%}
+.th-filler,.pod-table td.td-filler{background:transparent}
+.pod-table tbody tr:hover td.td-filler{background:var(--s2)}
 .pod-table thead{position:sticky;top:0;z-index:10}
 
 /* th padrão */
@@ -180,16 +182,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--t1);font-
 }
 .col-resize-handle:hover::after,.col-resize-handle.resizing::after{background:var(--blue)}
 
-/* fixed cols — sticky direita */
-.th-fixed{cursor:default !important;position:sticky;background:var(--s2);z-index:6}
-.pod-table td.td-fixed{position:sticky;background:var(--s1);z-index:5}
-.pod-table tbody tr:hover td.td-fixed{background:var(--s2)}
-.pod-table tbody tr.decided td.td-fixed{background:var(--s1);opacity:.72}
-.th-div,.td-div{right:288px}
-.th-comp,.td-comp{right:168px}
-.th-act,.td-act{right:0}
-.th-div{box-shadow:-3px 0 6px rgba(20,25,36,.06)}
-.td-div{box-shadow:-3px 0 6px rgba(20,25,36,.04)}
+/* fixed cols */
+.th-fixed{cursor:default !important}
 .th-actions{text-align:center !important}
 
 /* td */
@@ -787,9 +781,10 @@ function renderHeader(){
       <div class="col-resize-handle" onmousedown="colResizeStart(event,'${key}')"></div>
     </th>`;
   }).join('')
-  +`<th class="th-fixed th-div" style="width:168px">Divergência</th>`
-  +`<th class="th-fixed th-comp" style="width:120px;text-align:center">Comprovante</th>`
-  +`<th class="th-fixed th-actions th-act" style="width:168px;text-align:center">Ações</th>`;
+  +`<th class="th-fixed" style="width:168px">Divergência</th>`
+  +`<th class="th-fixed" style="width:120px;text-align:center">Comprovante</th>`
+  +`<th class="th-fixed th-actions" style="width:168px;text-align:center">Ações</th>`
+  +`<th class="th-filler"></th>`;
 }
 
 /* ══ RENDER BODY ══ */
@@ -822,15 +817,18 @@ function render(){
 
   const fixedW=168+120+168;
   const dynW=colOrder.reduce((s,k)=>s+colWidths[k],0);
-  document.getElementById('pod-table').style.width=(dynW+fixedW)+'px';
+  const minW=dynW+fixedW;
+  const wrapW=document.getElementById('table-wrap').clientWidth||minW;
+  document.getElementById('pod-table').style.width=Math.max(minW,wrapW)+'px';
 
   tbody.innerHTML=fp.map(p=>{
     const cells=colOrder.map(key=>buildCell(p,key)).join('');
     return`<tr class="${p.status!=='pending'?'decided':''}" data-id="${p.id}">
       ${cells}
-      <td class="td-fixed td-div">${buildDivCell(p)}</td>
-      <td class="td-fixed td-comp thumb-cell">${buildThumb(p)}</td>
-      <td class="td-fixed td-act"><div class="actions-cell">${buildActions(p)}</div></td>
+      <td>${buildDivCell(p)}</td>
+      <td class="thumb-cell">${buildThumb(p)}</td>
+      <td><div class="actions-cell">${buildActions(p)}</div></td>
+      <td class="td-filler"></td>
     </tr>`;
   }).join('');
 }
@@ -1034,7 +1032,9 @@ function colResizeStart(e,key){
     renderHeader();
     const fixedW=168+120+168;
     const dynW=colOrder.reduce((s,k)=>s+colWidths[k],0);
-    document.getElementById('pod-table').style.width=(dynW+fixedW)+'px';
+    const minW=dynW+fixedW;
+    const wrapW=document.getElementById('table-wrap').clientWidth||minW;
+    document.getElementById('pod-table').style.width=Math.max(minW,wrapW)+'px';
   }
   function onUp(){
     handle.classList.remove('resizing');
