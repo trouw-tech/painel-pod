@@ -146,7 +146,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--t1);font-
 .table-wrap::-webkit-scrollbar{width:6px;height:6px}
 .table-wrap::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
 
-.pod-table{border-collapse:collapse;table-layout:fixed}
+.pod-table{border-collapse:collapse;table-layout:fixed;width:100%}
+.th-filler{background:var(--s2);border-bottom:1px solid var(--border)!important}
+.pod-table td.td-filler{background:var(--s1)}
 .pod-table thead{position:sticky;top:0;z-index:10}
 
 /* th padrão */
@@ -781,7 +783,8 @@ function renderHeader(){
   }).join('')
   +`<th class="th-fixed" style="width:168px">Divergência</th>`
   +`<th class="th-fixed" style="width:120px;text-align:center">Comprovante</th>`
-  +`<th class="th-fixed th-actions" style="width:168px;text-align:center">Ações</th>`;
+  +`<th class="th-fixed th-actions" style="width:168px;text-align:center">Ações</th>`
+  +`<th class="th-filler"></th>`;
 }
 
 /* ══ RENDER BODY ══ */
@@ -812,10 +815,11 @@ function render(){
   }
   empty.style.display='none';
 
-  /* Calcula total width para a tabela */
+  /* min-width garante scroll horizontal se necessário */
   const fixedW=168+120+168;
   const dynW=colOrder.reduce((s,k)=>s+colWidths[k],0);
-  document.getElementById('pod-table').style.width=(dynW+fixedW)+'px';
+  document.getElementById('pod-table').style.minWidth=(dynW+fixedW)+'px';
+  document.getElementById('pod-table').style.width='';
 
   tbody.innerHTML=fp.map(p=>{
     const cells=colOrder.map(key=>buildCell(p,key)).join('');
@@ -824,6 +828,7 @@ function render(){
       <td>${buildDivCell(p)}</td>
       <td class="thumb-cell">${buildThumb(p)}</td>
       <td><div class="actions-cell">${buildActions(p)}</div></td>
+      <td class="td-filler"></td>
     </tr>`;
   }).join('');
 }
@@ -1027,7 +1032,8 @@ function colResizeStart(e,key){
     renderHeader();
     const fixedW=168+120+168;
     const dynW=colOrder.reduce((s,k)=>s+colWidths[k],0);
-    document.getElementById('pod-table').style.width=(dynW+fixedW)+'px';
+    document.getElementById('pod-table').style.minWidth=(dynW+fixedW)+'px';
+    document.getElementById('pod-table').style.width='';
   }
   function onUp(){
     handle.classList.remove('resizing');
