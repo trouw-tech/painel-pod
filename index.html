@@ -146,9 +146,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--t1);font-
 .table-wrap::-webkit-scrollbar{width:6px;height:6px}
 .table-wrap::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
 
-.pod-table{border-collapse:collapse;table-layout:fixed;width:100%}
-.th-filler,.pod-table td.td-filler{background:transparent}
-.pod-table tbody tr:hover td.td-filler{background:var(--s2)}
+.pod-table{border-collapse:collapse;table-layout:fixed}
 .pod-table thead{position:sticky;top:0;z-index:10}
 
 /* th padrão */
@@ -764,11 +762,25 @@ function setPeriod(btn){
 
 /* ══ RENDER HEADER ══ */
 function renderHeader(){
+  const fixedW=168+120+168;
+  const dynW=colOrder.reduce((s,k)=>s+colWidths[k],0);
+  const wrapW=(document.getElementById('table-wrap').clientWidth||dynW+fixedW)-fixedW;
+  const availW=Math.max(dynW,wrapW);
+  const scale=availW/dynW;
+  /* distribui espaço extra proporcionalmente e corrige arredondamento no último */
+  let acc=0;
+  const scaled={};
+  colOrder.forEach((k,i)=>{
+    if(i<colOrder.length-1){scaled[k]=Math.floor(colWidths[k]*scale);acc+=scaled[k];}
+    else{scaled[k]=availW-acc;}
+  });
+  document.getElementById('pod-table').style.width=(availW+fixedW)+'px';
+
   const tr=document.getElementById('thead-row');
-  tr.innerHTML=colOrder.map((key,i)=>{
+  tr.innerHTML=colOrder.map((key)=>{
     const col=COLS[key];
     const isSorted=sortKey===col.sortKey;
-    return`<th style="width:${colWidths[key]}px"
+    return`<th style="width:${scaled[key]}px"
               draggable="true"
               ${col.sortable?`onclick="sortBy('${col.sortKey}')" class="sortable${isSorted?' sorted':''}"`:``}
               ondragstart="colDragStart(event,'${key}')"
@@ -783,8 +795,7 @@ function renderHeader(){
   }).join('')
   +`<th class="th-fixed" style="width:168px">Divergência</th>`
   +`<th class="th-fixed" style="width:120px;text-align:center">Comprovante</th>`
-  +`<th class="th-fixed th-actions" style="width:168px;text-align:center">Ações</th>`
-  +`<th class="th-filler"></th>`;
+  +`<th class="th-fixed th-actions" style="width:168px;text-align:center">Ações</th>`;
 }
 
 /* ══ RENDER BODY ══ */
@@ -815,11 +826,7 @@ function render(){
   }
   empty.style.display='none';
 
-  const fixedW=168+120+168;
-  const dynW=colOrder.reduce((s,k)=>s+colWidths[k],0);
-  const minW=dynW+fixedW;
-  const wrapW=document.getElementById('table-wrap').clientWidth||minW;
-  document.getElementById('pod-table').style.width=Math.max(minW,wrapW)+'px';
+  renderHeader(); /* recalcula widths proporcionais */
 
   tbody.innerHTML=fp.map(p=>{
     const cells=colOrder.map(key=>buildCell(p,key)).join('');
@@ -828,7 +835,6 @@ function render(){
       <td>${buildDivCell(p)}</td>
       <td class="thumb-cell">${buildThumb(p)}</td>
       <td><div class="actions-cell">${buildActions(p)}</div></td>
-      <td class="td-filler"></td>
     </tr>`;
   }).join('');
 }
@@ -1030,11 +1036,7 @@ function colResizeStart(e,key){
   function onMove(ev){
     colWidths[key]=Math.max(60,startW+ev.clientX-startX);
     renderHeader();
-    const fixedW=168+120+168;
-    const dynW=colOrder.reduce((s,k)=>s+colWidths[k],0);
-    const minW=dynW+fixedW;
-    const wrapW=document.getElementById('table-wrap').clientWidth||minW;
-    document.getElementById('pod-table').style.width=Math.max(minW,wrapW)+'px';
+    renderHeader();
   }
   function onUp(){
     handle.classList.remove('resizing');
